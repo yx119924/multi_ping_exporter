@@ -1,0 +1,89 @@
+groups:
+  - name: multi-ping-exporter
+    rules:
+      - alert: 目标网关不可达
+        expr: >-
+          (
+            (
+              (max_over_time(ping_probe_success{job="multi_ping",alert_schedule!="business_hours"}[5m]) == 0)
+              and on(target) (ping_target_enabled{job="multi_ping",alert_schedule!="business_hours"} == 1)
+            )
+            or
+            (
+              (
+                (max_over_time(ping_probe_success{job="multi_ping",alert_schedule="business_hours"}[5m]) == bool 0)
+                * on(target) (ping_target_enabled{job="multi_ping",alert_schedule="business_hours"} == bool 1)
+                * (
+                  ((time() + 8 * 3600) % 86400 >= bool 27000)
+                  * ((time() + 8 * 3600) % 86400 < bool 66600)
+                )
+              ) == 1
+            )
+          )
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.env }} {{ $labels.target }} 连续 ping 失败"
+          description: "{{ $labels.target }} 最近 5 分钟没有一次成功探测，请在 exporter 机器上执行 ping 和 /targets 对比。"
+
+      - alert: ping测丢包率较高
+        expr: >-
+          (
+            (
+              (avg_over_time(ping_probe_packet_loss_ratio{job="multi_ping",alert_schedule!="business_hours"}[10m]) > 0.5)
+              and on(target) (ping_target_enabled{job="multi_ping",alert_schedule!="business_hours"} == 1)
+            )
+            or
+            (
+              (
+                (avg_over_time(ping_probe_packet_loss_ratio{job="multi_ping",alert_schedule="business_hours"}[10m]) > bool 0.5)
+                * on(target) (ping_target_enabled{job="multi_ping",alert_schedule="business_hours"} == bool 1)
+                * (
+                  ((time() + 8 * 3600) % 86400 >= bool 27000)
+                  * ((time() + 8 * 3600) % 86400 < bool 66600)
+                )
+              ) == 1
+            )
+          )
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.env }} {{ $labels.target }} ping 丢包率较高"
+          description: "{{ $labels.target }} 最近 10 分钟平均丢包率超过 50%。"
+
+      - alert: ping测延迟超过200ms
+        expr: >-
+          (
+            (
+              (ping_probe_rtt_seconds{job="multi_ping",alert_schedule!="business_hours"} > 0.2)
+              and on(target) (ping_target_enabled{job="multi_ping",alert_schedule!="business_hours"} == 1)
+            )
+            or
+            (
+              (
+                (ping_probe_rtt_seconds{job="multi_ping",alert_schedule="business_hours"} > bool 0.2)
+                * on(target) (ping_target_enabled{job="multi_ping",alert_schedule="business_hours"} == bool 1)
+                * (
+                  ((time() + 8 * 3600) % 86400 >= bool 27000)
+                  * ((time() + 8 * 3600) % 86400 < bool 66600)
+                )
+              ) == 1
+            )
+          )
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.env }} {{ $labels.target }} ping 延迟超过 200ms"
+          description: "{{ $labels.target }} 最近一次平均 ping 延迟超过 200ms，并持续至少 1 分钟。"
+
+      - alert: PingExporterProbeBacklog
+        expr: ping_exporter_queue_size{job="multi_ping"} > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "multi_ping_exporter 探测队列堆积"
+          description: "exporter 探测速度跟不上目标数量，请增加 workers、probe_interval_seconds，或拆分多个 exporter。"

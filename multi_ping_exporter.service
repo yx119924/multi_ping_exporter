@@ -1,0 +1,19 @@
+[Unit]
+Description=Multi Ping Exporter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=prometheus
+Group=prometheus
+WorkingDirectory=/opt/multi-ping-exporter
+ExecStart=/usr/bin/python3 /opt/multi-ping-exporter/multi_ping_exporter.py --config /opt/multi-ping-exporter/multi_ping_exporter.json
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

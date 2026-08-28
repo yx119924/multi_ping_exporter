@@ -1,0 +1,28 @@
+{
+  "listen": "0.0.0.0:9116",
+  "probe_interval_seconds": 15,
+  "probe_timeout_seconds": 3,
+  "ping_count": 5,
+  "success_required": 1,
+  "workers": 20,
+  "jitter_seconds": 0.05,
+  "window_size": 20,
+  "targets": [
+    {
+      "target": "192.0.2.1",
+      "env": "example",
+      "alert_schedule": "business_hours",
+      "enabled": false,
+      "comment": "维护中"
+    },
+    {
+      "target": "192.0.2.2",
+      "env": "example",
+      "alert_schedule": "business_hours"
+    },
+    {
+      "target": "192.0.2.3",
+      "env": "example"
+    }
+  ]
+}
